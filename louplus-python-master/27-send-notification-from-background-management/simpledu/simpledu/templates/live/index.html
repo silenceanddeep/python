@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Live{% endblock %}
+
+{% block head_css %}
+{{ super() }}
+<style>
+#message-box {
+  background-color: #eee;
+  font-size: 15px;
+  padding: 3px 0 0 5px;
+  width: 100%;
+  height: 455px;
+  border-radius: 3px;
+  margin-bottom: 10px;
+  overflow: scroll;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="row">
+  <div class="col-md-9">
+    <video id="videoElement" width="100%" height="500px" controls="controls"></video>
+  </div>
+  <div class="col-md-3">
+    <div id="message-box">
+    </div>
+    <div class="input-group" id="message-form">
+      <input type="text" class="form-control">
+      <span class="input-group-btn">
+        <button class="btn btn-primary" type="button">发言</button>
+      </span>
+    </div><!-- /input-group -->
+  </div>
+</div>
+{% endblock %}
+
+{% block tail_js %}
+{{ super() }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flv.js/1.3.3/flv.min.js"></script>
+<script>
+if (flvjs.isSupported()) {
+    var videoElement = document.getElementById('videoElement');
+    var flvPlayer = flvjs.createPlayer({
+        type: 'flv',
+        isLive: true,
+        url: 'http://itshiyan.com/AppName/StreamName.flv?auth_key=1508398325-0-0-075e40a6a2d511290e13539e5617fb1c'
+    });
+    flvPlayer.attachMediaElement(videoElement);
+    flvPlayer.load();
+    flvPlayer.play();
+}
+</script>
+<script>
+  var chat = new WebSocket('ws://'+ location.host + "/ws/chat");
+
+  chat.onmessage = function(message) {
+    var data = JSON.parse(message.data);
+    $("#message-box").append('<p><b>' + data.username + '</b>' + ': ' + data.text + '</p>');
+  };
+
+chat.onclose = function(){
+  console.log('chat closed');
+  this.chat = new WebSocket('ws://'+ location.host + "/ws/chat");
+};
+
+$("#message-form button").on("click", function(event) {
+  text = $('#message-form input').val();
+  username = $('#username').text()
+  chat.send(JSON.stringify({ username: username, text: text }));
+  $('#message-form input').val('');
+});
+</script>
+{% endblock %}
+
